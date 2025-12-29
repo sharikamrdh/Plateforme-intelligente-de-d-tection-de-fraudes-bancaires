@@ -1,0 +1,436 @@
+<div class="dashboard">
+  <app-navbar></app-navbar>
+
+  <main class="dashboard-content">
+    <!-- Header -->
+    <header class="dashboard-header animate-fadeIn">
+      <div class="header-info">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Surveillance des transactions et détection de fraude en temps réel</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="loadData()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Actualiser
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Cards -->
+    @if (transactionService.stats(); as stats) {
+      <section class="stats-grid animate-slideUp">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <div class="stat-value">{{ stats.total_transactions | number }}</div>
+          <div class="stat-label">Total transactions</div>
+        </div>
+
+        <div class="stat-card stat-warning">
+          <div class="stat-icon warning">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="stat-value text-warning">{{ stats.suspicious_count | number }}</div>
+          <div class="stat-label">Transactions suspectes</div>
+        </div>
+
+        <div class="stat-card stat-danger">
+          <div class="stat-icon danger">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <div class="stat-value text-danger">{{ stats.confirmed_fraud_count | number }}</div>
+          <div class="stat-label">Fraudes confirmées</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="stat-value">{{ stats.pending_review | number }}</div>
+          <div class="stat-label">En attente de revue</div>
+        </div>
+      </section>
+    }
+
+    <!-- Main Content -->
+    <div class="dashboard-main">
+      <!-- Transactions Table -->
+      <section class="transactions-section card animate-slideUp">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            Transactions récentes
+          </h2>
+
+          <!-- Filters -->
+          <div class="filters">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Rechercher..."
+                [(ngModel)]="filters().search"
+                (ngModelChange)="onFilterChange()"
+              />
+            </div>
+
+            <select class="filter-select" [(ngModel)]="filters().status" (ngModelChange)="onFilterChange()">
+              <option value="">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="analyzed">Analysé</option>
+              <option value="reviewed">Revu</option>
+              <option value="confirmed_fraud">Fraude</option>
+              <option value="cleared">Validé</option>
+            </select>
+
+            <select class="filter-select" [ngModel]="filters().is_suspicious" (ngModelChange)="filters().is_suspicious = $event === '' ? undefined : $event === 'true'; onFilterChange()">
+              <option value="">Tous</option>
+              <option value="true">Suspects uniquement</option>
+              <option value="false">Non suspects</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+          @if (transactionService.isLoading()) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>Chargement des transactions...</p>
+            </div>
+          } @else if (transactionService.transactions().length === 0) {
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+              <p>Aucune transaction trouvée</p>
+            </div>
+          } @else {
+            <table>
+              <thead>
+                <tr>
+                  <th class="sortable" (click)="onSortChange('transaction_ref')">
+                    Référence
+                    @if (filters().sort_by === 'transaction_ref') {
+                      <span class="sort-icon">{{ filters().sort_order === 'asc' ? '↑' : '↓' }}</span>
+                    }
+                  </th>
+                  <th class="sortable" (click)="onSortChange('amount')">
+                    Montant
+                    @if (filters().sort_by === 'amount') {
+                      <span class="sort-icon">{{ filters().sort_order === 'asc' ? '↑' : '↓' }}</span>
+                    }
+                  </th>
+                  <th>Type</th>
+                  <th>Bénéficiaire</th>
+                  <th class="sortable" (click)="onSortChange('transaction_date')">
+                    Date
+                    @if (filters().sort_by === 'transaction_date') {
+                      <span class="sort-icon">{{ filters().sort_order === 'asc' ? '↑' : '↓' }}</span>
+                    }
+                  </th>
+                  <th class="sortable" (click)="onSortChange('fraud_score')">
+                    Score
+                    @if (filters().sort_by === 'fraud_score') {
+                      <span class="sort-icon">{{ filters().sort_order === 'asc' ? '↑' : '↓' }}</span>
+                    }
+                  </th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (transaction of transactionService.transactions(); track transaction.id) {
+                  <tr [class.suspicious]="transaction.is_suspicious" [class.fraud]="transaction.is_confirmed_fraud">
+                    <td>
+                      <span class="transaction-ref">{{ transaction.transaction_ref }}</span>
+                    </td>
+                    <td>
+                      <span class="amount" [class.large]="transaction.amount > 5000">
+                        {{ formatCurrency(transaction.amount) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="transaction-type">
+                        {{ getTransactionTypeIcon(transaction.transaction_type) }}
+                        {{ transaction.transaction_type }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="beneficiary">
+                        <span class="name">{{ transaction.receiver_name || 'N/A' }}</span>
+                        <span class="country">{{ transaction.country_destination || 'FR' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="date">{{ formatDate(transaction.transaction_date) }}</span>
+                    </td>
+                    <td>
+                      @if (transaction.fraud_score !== null) {
+                        <div class="score-indicator">
+                          <span class="badge" [class]="getRiskBadgeClass(transaction.fraud_score)">
+                            {{ transaction.fraud_score }}
+                          </span>
+                          <div class="score-bar">
+                            <div 
+                              class="score-fill"
+                              [class.score-low]="transaction.fraud_score < 50"
+                              [class.score-medium]="transaction.fraud_score >= 50 && transaction.fraud_score < 70"
+                              [class.score-high]="transaction.fraud_score >= 70 && transaction.fraud_score < 85"
+                              [class.score-critical]="transaction.fraud_score >= 85"
+                              [style.width.%]="transaction.fraud_score"
+                            ></div>
+                          </div>
+                        </div>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="badge" [class]="getStatusBadgeClass(transaction.status)">
+                        {{ getStatusLabel(transaction.status) }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <button 
+                          class="btn-action" 
+                          title="Analyser"
+                          (click)="analyzeTransaction(transaction)"
+                          [disabled]="transaction.status === 'confirmed_fraud'"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <line x1="11" y1="8" x2="11" y2="14"/>
+                            <line x1="8" y1="11" x2="14" y2="11"/>
+                          </svg>
+                        </button>
+                        @if (transaction.status === 'analyzed') {
+                          <button 
+                            class="btn-action"
+                            title="Valider/Rejeter"
+                            (click)="openReviewModal(transaction)"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                              <line x1="16" y1="13" x2="8" y2="13"/>
+                              <line x1="16" y1="17" x2="8" y2="17"/>
+                              <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (transactionService.totalPages() > 1) {
+          <div class="pagination">
+            <button 
+              class="btn btn-secondary btn-sm"
+              [disabled]="transactionService.currentPage() <= 1"
+              (click)="onPageChange(transactionService.currentPage() - 1)"
+            >
+              ← Précédent
+            </button>
+            <span class="page-info">
+              Page {{ transactionService.currentPage() }} sur {{ transactionService.totalPages() }}
+              ({{ transactionService.totalCount() }} résultats)
+            </span>
+            <button 
+              class="btn btn-secondary btn-sm"
+              [disabled]="transactionService.currentPage() >= transactionService.totalPages()"
+              (click)="onPageChange(transactionService.currentPage() + 1)"
+            >
+              Suivant →
+            </button>
+          </div>
+        }
+      </section>
+    </div>
+  </main>
+
+  <!-- Analysis Modal -->
+  <app-modal 
+    [isOpen]="showAnalysisModal()" 
+    [title]="'Analyse de fraude - ' + (selectedTransaction()?.transaction_ref || '')"
+    size="lg"
+    (closed)="closeModals()"
+  >
+    @if (isAnalyzing()) {
+      <div class="analysis-loading">
+        <div class="spinner"></div>
+        <p>Analyse en cours...</p>
+        <p class="text-muted">L'IA analyse la transaction et génère une explication</p>
+      </div>
+    } @else {
+      @if (analysisResult()) {
+        <div class="analysis-result">
+          <!-- Score Display -->
+          <div class="score-display" [class.high-risk]="analysisResult()!.fraud_score >= 70">
+            <div class="score-circle">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border-color)" stroke-width="8"/>
+                <circle 
+                  cx="50" cy="50" r="45" 
+                  fill="none" 
+                  [attr.stroke]="transactionService.getRiskColor(analysisResult()!.fraud_score)"
+                  stroke-width="8"
+                  stroke-linecap="round"
+                  [style.stroke-dasharray]="283"
+                  [style.stroke-dashoffset]="283 - (283 * analysisResult()!.fraud_score / 100)"
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+              <div class="score-value">{{ analysisResult()!.fraud_score }}</div>
+            </div>
+            <div class="score-info">
+              <span class="risk-level badge" [class]="getRiskBadgeClass(analysisResult()!.fraud_score)">
+                {{ analysisResult()!.risk_level | uppercase }}
+              </span>
+              <span class="suspicious-label" [class.active]="analysisResult()!.is_suspicious">
+                {{ analysisResult()!.is_suspicious ? '⚠️ Transaction suspecte' : '✅ Transaction normale' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Risk Factors -->
+          @if (analysisResult()!.factors.length > 0) {
+            <div class="risk-factors">
+              <h4>Facteurs de risque détectés</h4>
+              <ul>
+                @for (factor of analysisResult()!.factors; track factor) {
+                  <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {{ factor }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- AI Explanation -->
+          <div class="ai-explanation">
+            <h4>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 18a8 8 0 118-8 8 8 0 01-8 8z"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              Explication de l'IA
+            </h4>
+            <div class="explanation-text">
+              {{ analysisResult()!.ai_explanation }}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="modal-actions">
+            @if (selectedTransaction()?.status === 'analyzed') {
+              <button class="btn btn-danger" (click)="submitReview(true); closeModals()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                Confirmer fraude
+              </button>
+              <button class="btn btn-primary" (click)="submitReview(false); closeModals()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Valider transaction
+              </button>
+            }
+            <button class="btn btn-secondary" (click)="closeModals()">Fermer</button>
+          </div>
+        </div>
+      }
+    }
+  </app-modal>
+
+  <!-- Review Modal -->
+  <app-modal 
+    [isOpen]="showReviewModal()" 
+    title="Revue de transaction"
+    size="md"
+    (closed)="closeModals()"
+  >
+    @if (selectedTransaction(); as transaction) {
+      <div class="review-content">
+        <div class="transaction-summary">
+          <p><strong>Référence:</strong> {{ transaction.transaction_ref }}</p>
+          <p><strong>Montant:</strong> {{ formatCurrency(transaction.amount) }}</p>
+          <p><strong>Score de fraude:</strong> {{ transaction.fraud_score }}/100</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Notes de revue (optionnel)</label>
+          <textarea 
+            class="form-input"
+            [(ngModel)]="reviewNotes"
+            rows="3"
+            placeholder="Ajoutez des notes sur votre décision..."
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-danger" (click)="submitReview(true)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            Confirmer comme fraude
+          </button>
+          <button class="btn btn-primary" (click)="submitReview(false)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Valider (pas de fraude)
+          </button>
+        </div>
+      </div>
+    }
+  </app-modal>
+</div>

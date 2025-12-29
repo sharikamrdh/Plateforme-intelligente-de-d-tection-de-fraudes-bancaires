@@ -1,0 +1,98 @@
+<div class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+      <!-- Logo -->
+      <div class="login-header">
+        <div class="logo">
+          <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="url(#gradient)" />
+            <path d="M10 16C10 12.6863 12.6863 10 16 10C19.3137 10 22 12.6863 22 16C22 19.3137 19.3137 22 16 22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="3" fill="white"/>
+            <defs>
+              <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#22c55e"/>
+                <stop offset="1" stop-color="#16a34a"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1>BPCE<span class="accent">Fraud</span></h1>
+        <p class="subtitle">Plateforme de détection de fraude</p>
+      </div>
+
+      <!-- Error message -->
+      @if (errorMessage) {
+        <div class="alert alert-error">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+      }
+
+      <!-- Login form -->
+      <form (ngSubmit)="onSubmit()" class="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <input 
+              type="email" 
+              id="email" 
+              [(ngModel)]="email" 
+              name="email"
+              placeholder="admin@bpce.fr"
+              required
+              autocomplete="email"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <div class="input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            <input 
+              type="password" 
+              id="password" 
+              [(ngModel)]="password" 
+              name="password"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-login" [disabled]="isLoading">
+          @if (isLoading) {
+            <span class="spinner"></span>
+            Connexion...
+          } @else {
+            Se connecter
+          }
+        </button>
+      </form>
+
+      <!-- Register link -->
+      <div class="login-footer">
+        <p>Pas encore de compte ? <a routerLink="/register">Créer un compte</a></p>
+      </div>
+
+      <!-- Demo accounts -->
+      <div class="demo-accounts">
+        <p>Comptes de test:</p>
+        <code>admin&#64;bpce.fr / Admin123!</code>
+        <code>analyst&#64;bpce.fr / Admin123!</code>
+      </div>
+    </div>
+  </div>
+</div>
